@@ -96,7 +96,6 @@ export default {
 
     setInterval(updateSnowFall, 50);
     createSnowFlakes();
-    console.log(this.temp);
   },
 };
 </script>

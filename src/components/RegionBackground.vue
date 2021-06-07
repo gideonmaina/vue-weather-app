@@ -2,18 +2,33 @@
   <div
     class="region-background"
     :style="{ 'background-image': 'url(' + background_url + ')' }"
-  ></div>
+  >
+   <SnowyCanvas v-if="weather==='snow'"/>
+  </div>
 </template>
 
 <script>
+import SnowyCanvas from "./SnowyCanvas";
 export default {
+  components: {
+    SnowyCanvas,
+  },
   props: {
     background_url: {
       type: String,
       required: true,
       default: "https://source.unsplash.com/1600x900/?safari",
     },
+    weather:{
+      type:String
+    }
   },
+  data(){
+   return {testSwitch:"ABC"}
+  },
+ 
+    
+  
 };
 </script>
 

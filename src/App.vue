@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <RegionBackground :background_url="random_background" :weather="weatherType" v-if="weatherType"/>
     <main>
       <div class="search-box">
         <input
@@ -17,34 +18,54 @@
           <p>{{ getDate() }}</p>
         </div>
         <div class="weather-box">
-          <p class="temp">{{ Math.round(weather.main.temp) }} °c</p>
-          <p class="weather">{{ weather.weather[0].main }}</p>
-          <p class="weather">{{ weather.weather[0].description }}</p>
+          <p class="temp">{{ getTemp }} °c</p>
+          <!-- <p class="weather">{{ weatherMain }}</p> -->
+          <p class="weather">{{ weatherDescription }}</p>
         </div>
       </div>
-      <!-- <div style="color: white">
-        {{ weather }}
-      </div> -->
     </main>
   </div>
 </template>
 
 <script>
+import RegionBackground from "./components/RegionBackground";
 export default {
   name: "App",
+  components: {
+    RegionBackground,
+  },
+  computed: {
+    weatherDescription() {
+      return this.weather.weather[0].description;
+    },
+    weatherMain(){
+
+      return this.weather.weather[0].main;
+    },
+    getTemp() {
+      return Math.round(this.weather.main.temp);
+    },
+  },
   data() {
     return {
-      api_key: "743ee6457923d2f6fa6e9d5eaeadcd5e",
-      api_url: "http://api.openweathermap.org/data/2.5/",
+      openweather_api_key: "743ee6457923d2f6fa6e9d5eaeadcd5e",
+      opencagedata_api_key: "fe7faa6052874485949072a671caabfa",
+      openweather_api_url: "http://api.openweathermap.org/data/2.5/",
+      opencagedata_api_url: "https://api.opencagedata.com/geocode/v1/",
       query: "",
       weather: {},
+      testData: "",
+      random_background: "",
+      temp: "",
+      weatherType:""
+      
     };
   },
   methods: {
-    fetchWeather(e) {
+    async fetchWeather(e) {
       if (e.key == "Enter") {
-        fetch(
-          `${this.api_url}weather?q=${this.query}&units=metric&APPID=${this.api_key}`
+        await fetch(
+          `${this.openweather_api_url}weather?q=${this.query}&units=metric&APPID=${this.openweather_api_key}`
         )
           .then((res) => {
             return res.json();
@@ -54,6 +75,12 @@ export default {
     },
     setWeather(feth_results) {
       this.weather = feth_results;
+      this.weatherType=(this.weather.weather[0].main).toLowerCase();
+      console.log(this.weatherType)
+      this.random_background = `https://source.unsplash.com/1600x900/?${this.query}`.replace(
+        /\s+/g,
+        "+"
+      );
     },
     getDate() {
       let date = new Date();
@@ -77,6 +104,36 @@ export default {
       } ${date.getFullYear()}`;
       return date_string;
     },
+    getGeoLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          this.testData = position;
+          console.log(position);
+          fetch(
+            `${this.opencagedata_api_url}json?q=${position.coords.latitude},${position.coords.longitude}&key=${this.opencagedata_api_key}`
+            // `${this.opencagedata_api_url}json?q=51.507351,-0.127758&key=${this.opencagedata_api_key}`
+          )
+            .then((res) => {
+              console.log(res);
+              return res.json();
+            })
+            .then((data) => {
+              let location = data.results[0].components;
+              let locale = location.city || location.region || location.state;
+              this.query = `${locale}, ${location.country}`;
+              console.log(this.query);
+              this.random_background =
+                `https://source.unsplash.com/1600x900/?${locale},` +
+                `${location.country}`.replace(/\s+/g, "+");
+              console.log(this.random_background);
+              this.fetchWeather({ key: "Enter" });
+            });
+        });
+      }
+    },
+  },
+  mounted() {
+    this.getGeoLocation();
   },
 };
 </script>
@@ -91,8 +148,7 @@ export default {
   box-sizing: border-box;
 }
 #app {
-  background: url("./assets/raimond-klavins-unsplash.jpg") center/cover;
-  background-position: bottom;
+  position: relative;
   transition: 0.4s;
   font-family: "Montserrat", sans-serif;
 }
